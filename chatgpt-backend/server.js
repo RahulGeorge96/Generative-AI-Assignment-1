@@ -1,50 +1,38 @@
+// server.js
 const express = require("express");
-const OpenAI = require("openai");
 const bodyParser = require("body-parser");
+const OpenAI = require("openai");
 const dotenv = require("dotenv");
 
-// Load environment variables from a .env file
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Ensure you have set your OpenAI API key in the .env file
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// Endpoint to handle chat requests
-app.post("/chat", async (req, res) => {
-  try {
-    const { message } = req.body;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: message }],
-    });
-
-    res.json({ response: completion.choices[0].message.content });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Endpoint to generate Shayari
 app.post("/generate-shayari", async (req, res) => {
-  try {
-    const { keyword } = req.body;
+  const { prompt } = req.body;
 
+  try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: `Write a Shayari about ${keyword}` }],
+      messages: [{ role: "user", content: `Generate a Shayari on ${prompt}` }],
+      model: "gpt-3.5-turbo",
     });
 
-    res.json({ shayari: completion.choices[0].message.content });
+    const shayari = completion.choices[0].message.content.trim();
+    res.json({ shayari });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while generating the Shayari" });
   }
 });
 
